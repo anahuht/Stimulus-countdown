@@ -1,28 +1,117 @@
+<!--Copyrights-->
+
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8">
-    
-    <script type="module">
-         import { Application, Controller } from "https://unpkg.com/@hotwired/stimulus/dist/stimulus.js"
+    <link rel="stylesheet" href="main.css">
+    <script type="module" >
+        //Importing Stimulus
+        import { Application, Controller } from "https://unpkg.com/@hotwired/stimulus/dist/stimulus.js"
          window.Stimulus = Application.start()
          
-         
+         //Countdown-controller
         Stimulus.register("countdown", class extends Controller {
-         connect() {
-          this.element.textContent = "It works!"
-          }
+            static targets = [ "days", "hours", "minutes", "seconds", "button", "expired"]
+            static values = { url: String, refreshInterval: Number } 
 
-      
-})
+            connect() {
+                if (this.hasRefreshIntervalValue) {
+                this.startRefreshing()
+                }
+                const playing = true
+            }
+
+            startRefreshing() {
+                this.refreshTimer = setInterval(() => {
+                this.count()
+                }, 1000)
+                this.playing = true
+                this.buttonTarget.innerHTML = "PAUSE"
+            }
+
+            stopRefreshing() {
+                clearInterval(this.refreshTimer)
+                this.buttonTarget.innerHTML = "START"
+                this.playing = false
+            }
+
+            pause() {
+                if (this.playing) {
+                    this.stopRefreshing()
+                }
+                else 
+                {this.startRefreshing()}
+            }
+
+            count() {
+                //Getting input from URL
+                const params = new URLSearchParams(window.location.search)
+                for (const param of params) {
+                console.log(param)
+                }
+                console.log(params.get('time'))
+                const date = new Date(params.get('time'))
+
+                console.log(`${date}`)
+
+                //Timer
+                const total = Date.parse(date) - Date.parse(new Date())
+                const seconds = Math.floor((total / 1000) % 60);
+                const minutes = Math.floor((total / 1000 / 60) % 60);
+                const hours = Math.floor((total / (1000 * 60 * 60)) % 24);
+                const days = Math.floor(total / (1000 * 60 * 60 * 24));
+                console.log(`${seconds} ${minutes} ${hours} ${days}`)
+
+                //Output
+                this.daysTarget.innerHTML = days
+                this.hoursTarget.innerHTML = hours
+                this.minutesTarget.innerHTML = minutes
+                this.secondsTarget.innerHTML = seconds
+                
+                //Countdown over
+                if (total < 0){
+                    this.stopRefreshing()
+                    this.expiredTarget.innerHTML = "TIME IS OVER"
+                    this.daysTarget.innerHTML = "00"
+                    this.hoursTarget.innerHTML = "00"
+                    this.minutesTarget.innerHTML = "00"
+                    this.secondsTarget.innerHTML = "00"
+                }
+            }
+        })
     </script>
   
 </head>
 <body>
-    
-    <div data-controller="countdown"
-    data-countdown-url-value="/time"
-    data-ccountdown-refresh-interval-value="1000"></div>
-
+    <div class="body-container" >
+        <h1>TIME REMAINING</h1>
+        <div data-controller="countdown"
+             data-countdown-refresh-interval-value="1000">
+        <h1 data-countdown-target="expired"></h1>
+            <div class="countdown-container">
+                <div class="item-container">
+                    <p data-countdown-target="days"></p>
+                    <p style="font-size:18px">DAYS</p>
+                </div>
+               <p class="separator">:</p> 
+                <div class="item-container">
+                    <p data-countdown-target="hours"></p>
+                    <p style="font-size:18px">HOURS</p>
+                </div>
+                <p class="separator">:</p>
+                <div class="item-container">
+                    <p data-countdown-target="minutes"></p>
+                    <p style="font-size:18px">MINUTES</p>
+                </div>
+                <p class="separator">:</p>
+                <div class="item-container">
+                    <p data-countdown-target="seconds"></p>
+                    <p style="font-size:18px">SECONDS</p>
+                </div>
+            </div>
+            <button class="pause-btn" data-countdown-target="button" data-action="countdown#pause"> PAUSE </button> 
+        </div>
+    </div>
 </body>
 </html>
